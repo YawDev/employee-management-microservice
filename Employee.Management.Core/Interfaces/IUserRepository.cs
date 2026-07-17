@@ -1,5 +1,5 @@
-﻿using employee.management.identity.models.Dtos;
-using Employee.Management.Models.DatabaseModels;
+﻿using Employee.Management.Models.DatabaseModels;
+using Employee.Management.Models.Dtos;
 
 namespace Employee.Management.Core.Interfaces;
 

@@ -1,4 +1,4 @@
-namespace employee.management.identity.models.Dtos
+namespace Employee.Management.Models.Dtos
 {
     // DTO For Identity User - ASP.NET Identity User
     public class IdentityUserDTO

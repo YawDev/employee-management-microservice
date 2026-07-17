@@ -418,3 +418,5 @@ FodyWeavers.xsd
 *.msp
 .DS_Store
 Employee.Management.Api/appsettings.Development.json
+.vscode/tasks.json
+.vscode/launch.json

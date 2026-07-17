@@ -1,9 +1,9 @@
 
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using employee.management.identity.models.Dtos;
 using Employee.Management.Core.Interfaces;
 using Employee.Management.Models.DatabaseModels;
+using Employee.Management.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Management.Infrastructure.Repositories
