@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+.DS_Store
+Employee.Management.Api/appsettings.Development.json
