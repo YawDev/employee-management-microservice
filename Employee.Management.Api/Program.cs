@@ -1,5 +1,7 @@
 using Employee.Management.Api.Mapping;
-using Employee.Management.Core.Interfaces;
+using Employee.Management.Core.BusinessContext;
+using Employee.Management.Core.Interfaces.Business;
+using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Infrastructure;
 using Employee.Management.Infrastructure.Repositories;
 using Employee.Management.Models.DatabaseModels;
@@ -13,7 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 #region Services
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 
@@ -119,9 +120,12 @@ builder.Services.AddCors(options =>
 
 
 // Register application services for dependency injection
+builder.Services.AddScoped<ITenantService, TenantService>();
 
 // Register Repositories for dependency injection
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITenantRepository, TenantRepository>();
+// builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
 
 
 // Register AutoMapper
@@ -140,7 +144,6 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAuthentication();
-app.UseAuthorization();
+app.MapControllers(); // Maps controller routes for controller-based APIs
 app.Run();
 #endregion

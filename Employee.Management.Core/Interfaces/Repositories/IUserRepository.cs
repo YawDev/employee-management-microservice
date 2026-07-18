@@ -1,7 +1,7 @@
 ﻿using Employee.Management.Models.DatabaseModels;
 using Employee.Management.Models.Dtos;
 
-namespace Employee.Management.Core.Interfaces;
+namespace Employee.Management.Core.Interfaces.Repositories;
 
 public interface IUserRepository
 {
@@ -10,7 +10,7 @@ public interface IUserRepository
     Task<bool> DeleteAsync(Guid userId);
     Task<bool> ExistsAsync(Guid userId);
     Task<IdentityUserDTO?> GetByEmailAsync(string email);
-    Task<UserDTO?> GetByIdAsync(Guid userId);
+    Task<DomainUserDto?> GetByIdAsync(Guid userId);
     Task<ApplicationUser?> GetByUserNameAsync(string userName);
     Task<IdentityUserDTO?> GetIdentityUserInfoAsync(Guid id);
     Task<ApplicationUser> UpdateAsync(ApplicationUser user);
