@@ -1,7 +1,7 @@
 
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Employee.Management.Core.Interfaces;
+using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
 using Employee.Management.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
@@ -47,11 +47,11 @@ namespace Employee.Management.Infrastructure.Repositories
             return existingUser;
         }
 
-        public async Task<UserDTO?> GetByIdAsync(Guid identityUserId)
+        public async Task<DomainUserDto?> GetByIdAsync(Guid identityUserId)
         {
             var existingUser = await _context.DomainUsers
                 .Include(x => x.Tenant)
-                .ProjectTo<UserDTO>(_mapper.ConfigurationProvider)
+                .ProjectTo<DomainUserDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(u => u.IdentityUserId == identityUserId);
             return existingUser;
         }

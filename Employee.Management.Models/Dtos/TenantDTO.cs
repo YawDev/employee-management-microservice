@@ -1,6 +1,6 @@
 namespace Employee.Management.Models.Dtos
 {
-    public class TenantDTO
+    public class TenantDto
     {
         public int TenantId { get; set; }
         public Guid Uid { get; set; }

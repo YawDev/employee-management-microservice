@@ -4,8 +4,8 @@ namespace Employee.Management.Api.Controllers
 {
     
     [ApiController]
-    [Route("api/[controller]")]
-    public class TenantController : ControllerBase
+    [Route("company-admin-api")]
+    public class AdminController : ControllerBase
     {
         
     }
