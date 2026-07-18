@@ -38,7 +38,7 @@ namespace Employee.Management.Core.BusinessContext
             return await _tenantRepository.DeleteTenantAsync(tenantId) > 0; 
         }
 
-        public async Task<bool> EditTenant(int tenantId, TenantDto tenant)
+        public async Task<bool> EditTenant(int tenantId, EditTenantDto tenant)
         {
             var existingTenant = await _tenantRepository.GetTenantInfoAsync(tenantId);
             if (existingTenant == null)

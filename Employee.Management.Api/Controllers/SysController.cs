@@ -36,11 +36,11 @@ namespace Employee.Management.Api.Controllers
         }
 
         [HttpPost("edit-tenant/{id}")]
-        public async Task<IActionResult> EditTenant(int id, [FromBody] CreateTenantDto createTenantDto)
+        public async Task<IActionResult> EditTenant(int id, [FromBody] EditTenantDto editTenantDto)
         {
 
-            //var isSuccess = await _tenantService.EditTenant(id, createTenantDto);
-            return Ok(new SaveTenantDto { IsSaved = true });
+            var isSuccess = await _tenantService.EditTenant(id, editTenantDto);
+            return Ok(new SaveTenantDto { IsSaved = isSuccess });
         }
         
         [HttpPost("delete-tenant/{id}")]

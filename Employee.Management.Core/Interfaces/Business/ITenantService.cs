@@ -8,7 +8,7 @@ namespace Employee.Management.Core.Interfaces.Business
     {
         public Task<List<TenantDto>> GetAllTenants();
         public Task<TenantDto> GetTenantInfo(int tenantId);
-        public Task<bool> EditTenant(int tenantId, TenantDto tenant);
+        public Task<bool> EditTenant(int tenantId, EditTenantDto tenant);
         public Task<bool> CreateTenant(CreateTenantDto tenant);
         public Task<bool> DeleteTenant(int tenantId);
 
