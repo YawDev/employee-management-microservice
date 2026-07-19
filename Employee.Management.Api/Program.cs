@@ -24,10 +24,16 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Logging.AddConsole(o => o.FormatterName = CompactConsoleFormatter.FormatterName);
     builder.Logging.AddConsoleFormatter<CompactConsoleFormatter, ConsoleFormatterOptions>();
+
+    // Dev-only: surface our own Debug logs and EF Core SQL query logs.
+    builder.Logging.AddFilter("Employee.Management", LogLevel.Debug);
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Information);
 }
 else
 {
     builder.Logging.AddJsonConsole(o => o.IncludeScopes = true);
+    // Hosted: keep EF query noise out of the logs.
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 }
 
 // Add services to the container.
@@ -137,18 +143,24 @@ builder.Services.AddCors(options =>
 
 // Configure Authorization policies to enforce role-based access control for different user roles in the application.
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("SysAdmin", p => p.RequireRole("sys-admin"))
-    .AddPolicy("CompanyAdmin", p => p.RequireRole("company-admin"))
+    .AddPolicy("SystemAdmin", p => p.RequireRole("sys-admin"))
+    .AddPolicy("CompanyPermission", p => p.RequireRole("sys-admin", "company-admin"))
     // Configure Authorization policies to enforce role-based access control for different user roles in the application.
-    .AddPolicy("ReportUser", p => p.RequireRole("manager", "employee"));
+    .AddPolicy("ManagerPermission", p => p.RequireRole("sys-admin", "manager"))
+    .AddPolicy("EmployeePermission", p => p.RequireRole("sys-admin", "employee"));
 
 // Register application services for dependency injection
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IEmployeeManagerService, EmployeeManagerService>();
 
 // Register Repositories for dependency injection
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
-// builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
 
 
 // Register AutoMapper

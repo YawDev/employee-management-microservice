@@ -40,7 +40,14 @@ namespace Employee.Management.Api.Mapping
             CreateMap<ApplicationUser, IdentityUserDTO>().ReverseMap();
 
             // ---- Request DTOs -> entities ----
+            // Save*Dto carry only the create-relevant columns; PKs, Uid, audit
+            // timestamps and nav properties are left at default for the DB / service layer.
             CreateMap<CreateTenantDto, Tenant>();
+            CreateMap<SaveOrganizationDto, Organization>();
+            CreateMap<SaveDepartmentDto, Department>();
+            CreateMap<SaveEmployeeDto, EmployeeEntity>();
+            CreateMap<SaveManagerDto, Manager>();
+            CreateMap<SaveReportingLineDto, ReportingLine>();
             #endregion
         }
     }
