@@ -4,14 +4,18 @@ using Microsoft.Extensions.Logging.Console;
 namespace Employee.Management.Api.Logging
 {
     /// <summary>
-    /// Minimal single-line console formatter: "{level}: [{CorrelationId}] {RequestPath} {message}".
+    /// Single-line console formatter: "{level}: [{CorrelationId}] {RequestPath} {message}".
     /// Reads only CorrelationId + RequestPath out of the ambient scopes and drops the framework
-    /// scope noise (SpanId / TraceId / ParentId / ConnectionId / RequestId). Development-only —
-    /// hosted environments use the JSON console so aggregators can query the fields.
+    /// scope noise (SpanId / TraceId / ParentId / ConnectionId / RequestId). Renders each line in
+    /// ANSI blue (TTY only). Development-only — hosted environments use the JSON console.
     /// </summary>
     public sealed class CompactConsoleFormatter() : ConsoleFormatter(FormatterName)
     {
         public const string FormatterName = "compact";
+        private static readonly string Esc = ((char)27).ToString();
+        private static readonly string Blue = Esc + "[94m";  // ANSI bright blue
+        private static readonly string Reset = Esc + "[0m";
+        private static readonly bool Colorize = !Console.IsOutputRedirected;
 
         public override void Write<TState>(
             in LogEntry<TState> logEntry,
@@ -48,6 +52,7 @@ namespace Employee.Management.Api.Logging
                 _ => "info",
             };
 
+            if (Colorize) textWriter.Write(Blue);
             textWriter.Write(level);
             textWriter.Write(": [");
             textWriter.Write(correlationId ?? "-");
@@ -63,6 +68,7 @@ namespace Employee.Management.Api.Logging
                 textWriter.Write(' ');
                 textWriter.Write(logEntry.Exception.ToString());
             }
+            if (Colorize) textWriter.Write(Reset);
             textWriter.Write(Environment.NewLine);
         }
     }

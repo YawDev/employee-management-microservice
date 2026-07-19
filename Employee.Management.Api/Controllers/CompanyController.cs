@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Employee.Management.Api.Controllers
 {
-    [Authorize(Policy = "CompanyAdmin")] 
+    [Authorize(Policy = "CompanyPermission")] 
     [ApiController]
     [Route("company-admin-api")]
-    public class AdminController : ControllerBase
+    public class CompanyController : ControllerBase
     {
         
     }

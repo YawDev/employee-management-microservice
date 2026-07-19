@@ -32,6 +32,12 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
+        // Domain (org/business) person — distinct from the Identity user check below.
+        public async Task<bool> DomainUserExistsAsync(Guid domainUserId)
+        {
+            return await _context.DomainUsers.AnyAsync(u => u.DomainUserId == domainUserId);
+        }
+
         public async Task<bool> ExistsAsync(Guid userId)
         {
             var existingUser = await _context.ApplicationUsers.FindAsync(userId);

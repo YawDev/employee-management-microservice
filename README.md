@@ -49,6 +49,35 @@ Leavers are **soft-deleted, never hard-deleted**: set `Employee.EmploymentStatus
 and reassign the leaver's reports in `ReportingLine`. Rows stay for history and to
 keep FKs valid.
 
+## API authorization
+
+JWT bearer only: the identity service issues tokens, this service validates them
+(`JwtBearer` middleware) and enforces role-based policies. Each `DomainUser` has one
+role — `sys-admin`, `company-admin`, `manager`, or `employee` — emitted as a `role`
+claim. Policies are registered in
+[`Program.cs`](Employee.Management.Api/Program.cs) and applied at the controller
+level with `[Authorize(Policy = …)]`:
+
+| Policy | Roles allowed | Controller (route) |
+|---|---|---|
+| `SystemAdmin` | `sys-admin` | `SysController` (`sys-api`) — cross-tenant platform admin |
+| `CompanyPermission` | `sys-admin`, `company-admin` | `AdminController` (`company-admin-api`) |
+| `ManagerPermission` | `sys-admin`, `manager` | report tier (per endpoint) |
+| `EmployeePermission` | `sys-admin`, `employee` | report tier (per endpoint) |
+
+`sys-admin` appears in **every** policy, so it is a superuser — system-only
+endpoints *plus* every lower tier (a role-hierarchy model). Still open: whether
+`sys-admin` should also bypass future per-tenant ownership checks, or reach a
+tenant's business data only through dedicated, audited endpoints.
+
+**The report tier is provisional.** `ReportController` (`report-line-api`) carries
+`[Authorize(Policy = "ReportUser")]`, but no `ReportUser` policy is registered yet;
+it's an empty shell, so nothing throws. When endpoints land, scope them per role on
+the single controller rather than splitting it — stacked `[Authorize]` attributes
+combine with **AND**, so a broad controller baseline can be *narrowed* per action
+(widening across roles needs one multi-role policy). `UserController` (`api/User`)
+is authentication-only (`[Authorize]`) for now.
+
 ## Known limitations / TODO
 
 ### Reporting lines (`ReportingLine`) — deferred validation

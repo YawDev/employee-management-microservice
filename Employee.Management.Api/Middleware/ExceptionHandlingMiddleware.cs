@@ -58,6 +58,12 @@ namespace Employee.Management.Api.Middleware
                     errorDetails.StatusCode = StatusCodes.Status404NotFound;
                     errorDetails.Message = exception.Message;
                     break;
+                // Must precede the BadRequestException case — NotFoundException subclasses it.
+                case NotFoundException:
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    errorDetails.StatusCode = StatusCodes.Status404NotFound;
+                    errorDetails.Message = exception.Message;
+                    break;
                  case UnauthorizedException:
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     errorDetails.StatusCode = StatusCodes.Status401Unauthorized;
