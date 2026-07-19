@@ -1,4 +1,6 @@
+using Employee.Management.Api.Logging;
 using Employee.Management.Api.Mapping;
+using Employee.Management.Api.Middleware;
 using Employee.Management.Core.BusinessContext;
 using Employee.Management.Core.Interfaces.Business;
 using Employee.Management.Core.Interfaces.Repositories;
@@ -8,13 +10,28 @@ using Employee.Management.Models.DatabaseModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Console logging: a compact "[CorrelationId] path message" line in Development, structured JSON
+// once hosted (so aggregators — CloudWatch, journald/Loki, Azure Log Analytics — can query the
+// CorrelationId field). Both rely on the per-request correlation scope.
+builder.Logging.ClearProviders();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddConsole(o => o.FormatterName = CompactConsoleFormatter.FormatterName);
+    builder.Logging.AddConsoleFormatter<CompactConsoleFormatter, ConsoleFormatterOptions>();
+}
+else
+{
+    builder.Logging.AddJsonConsole(o => o.IncludeScopes = true);
+}
+
 // Add services to the container.
-#region Services
+#region Register services
 builder.Services.AddOpenApi();
 
 
@@ -112,12 +129,18 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins(domainList) 
+            policy.WithOrigins(domainList)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
 });
 
+// Configure Authorization policies to enforce role-based access control for different user roles in the application.
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("SysAdmin", p => p.RequireRole("sys-admin"))
+    .AddPolicy("CompanyAdmin", p => p.RequireRole("company-admin"))
+    // Configure Authorization policies to enforce role-based access control for different user roles in the application.
+    .AddPolicy("ReportUser", p => p.RequireRole("manager", "employee"));
 
 // Register application services for dependency injection
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -133,8 +156,9 @@ builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MapperProfile>();
 });
+#endregion
 
-
+#region Configure the HTTP request pipeline
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
@@ -142,6 +166,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors("AllowFrontend");
+app.UseMiddleware<CorrelationIdMiddleware>(); // Correlation id per request + a request-completion log line
+app.UseMiddleware<ExceptionHandlingMiddleware>(); // Centralized Exception handling
+app.UseHttpsRedirection(); // Redirects HTTP requests to HTTPS
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers(); // Maps controller routes for controller-based APIs

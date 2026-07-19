@@ -1,12 +1,13 @@
 using Employee.Management.Core.Interfaces.Business;
 using Employee.Management.Models.Dtos.RequestDtos;
 using Employee.Management.Models.Dtos.ResponseDtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace Employee.Management.Api.Controllers
 {
-    //TODO: Add protections to prevent unauthorized access to sys endpoints
+    [Authorize(Policy = "SysAdmin")]
     [ApiController]
     [Route("sys-api")]
     public class SysController(ITenantService tenantService) : ControllerBase
@@ -35,7 +36,7 @@ namespace Employee.Management.Api.Controllers
             return Ok(new SaveTenantDto { IsSaved = isSuccess });
         }
 
-        [HttpPost("edit-tenant/{id}")]
+        [HttpPut("edit-tenant/{id}")]
         public async Task<IActionResult> EditTenant(int id, [FromBody] EditTenantDto editTenantDto)
         {
 
@@ -43,7 +44,7 @@ namespace Employee.Management.Api.Controllers
             return Ok(new SaveTenantDto { IsSaved = isSuccess });
         }
         
-        [HttpPost("delete-tenant/{id}")]
+        [HttpDelete("delete-tenant/{id}")]
         public async Task<IActionResult> DeleteTenant(int id)
         {
             var isSuccess = await _tenantService.DeleteTenant(id);
