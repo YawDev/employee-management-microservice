@@ -4,13 +4,15 @@ using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.Dtos;
 using Employee.Management.Models.Dtos.RequestDtos;
 using Employee.Management.Models.DatabaseModels;
+using Microsoft.Extensions.Logging;
 
 namespace Employee.Management.Core.BusinessContext
 {
-    public class TenantService(ITenantRepository tenantRepository, IMapper mapper) : ITenantService
+    public class TenantService(ITenantRepository tenantRepository, IMapper mapper, ILogger<TenantService> logger) : ITenantService
     {
         private readonly ITenantRepository _tenantRepository = tenantRepository;
         private readonly IMapper _mapper = mapper;
+        private readonly ILogger<TenantService> _logger = logger;
 
         public async Task<bool> CreateTenant(CreateTenantDto tenant)
         {
@@ -26,7 +28,9 @@ namespace Employee.Management.Core.BusinessContext
                 Logo = tenant.Logo
             };
 
-            return await _tenantRepository.CreateTenantAsync(tenantEntity) > 0;
+            var created = await _tenantRepository.CreateTenantAsync(tenantEntity) > 0;
+            _logger.LogInformation("Created tenant {TenantName} (success: {Created})", tenant.Name, created);
+            return created;
         }
 
         public async Task<bool> DeleteTenant(int tenantId)
@@ -35,7 +39,9 @@ namespace Employee.Management.Core.BusinessContext
             if(existingTenant == null)
                 throw new Exception("Tenant not found.");
 
-            return await _tenantRepository.DeleteTenantAsync(tenantId) > 0; 
+            var deleted = await _tenantRepository.DeleteTenantAsync(tenantId) > 0;
+            _logger.LogInformation("Deleted tenant {TenantId} (success: {Deleted})", tenantId, deleted);
+            return deleted;
         }
 
         public async Task<bool> EditTenant(int tenantId, EditTenantDto tenant)
@@ -50,7 +56,9 @@ namespace Employee.Management.Core.BusinessContext
             existingTenant.Name = tenant.Name;
             existingTenant.Logo = tenant.Logo;
 
-            return await _tenantRepository.EditTenantAsync(existingTenant) > 0;
+            var updated = await _tenantRepository.EditTenantAsync(existingTenant) > 0;
+            _logger.LogInformation("Edited tenant {TenantId}", tenantId);
+            return updated;
         }
 
         public async Task<List<TenantDto>> GetAllTenants()

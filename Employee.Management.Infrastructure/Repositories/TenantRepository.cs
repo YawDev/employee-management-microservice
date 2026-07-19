@@ -33,6 +33,7 @@ namespace Employee.Management.Infrastructure.Repositories
 
         public async Task<int> EditTenantAsync(Tenant tenant)
         {
+            tenant.Uid = Guid.NewGuid(); // Update the Uid to a new value
             _context.Tenants.Update(tenant);
             return await _context.SaveChangesAsync();
         }
