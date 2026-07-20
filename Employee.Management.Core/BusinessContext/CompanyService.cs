@@ -5,6 +5,7 @@ using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
 using Employee.Management.Models.Dtos;
 using Employee.Management.Models.Dtos.RequestDtos;
+using Employee.Management.Models.Dtos.ResponseDtos;
 using Microsoft.Extensions.Logging;
 
 namespace Employee.Management.Core.BusinessContext
@@ -86,18 +87,18 @@ namespace Employee.Management.Core.BusinessContext
             return deleted;
         }
 
-        public async Task<List<OrganizationDto>> GetAllOrganizations()
+        public async Task<List<OrganizationResponseDto>> GetAllOrganizations()
         {
             return await _organizationRepository.GetAllOrganizationsAsync();
         }
 
-        public async Task<OrganizationDto> GetOrganizationInfo(int organizationId)
+        public async Task<OrganizationResponseDto> GetOrganizationInfo(int organizationId)
         {
             var organization = await _organizationRepository.GetOrganizationInfoAsync(organizationId);
             if (organization == null)
                 throw new NotFoundException("Organization not found.");
 
-            return _mapper.Map<OrganizationDto>(organization);
+            return _mapper.Map<OrganizationResponseDto>(organization);
         }
 
         #endregion

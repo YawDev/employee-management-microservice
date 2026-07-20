@@ -1,7 +1,7 @@
 using AutoMapper;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos;
+using Employee.Management.Models.Dtos.ResponseDtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Management.Infrastructure.Repositories
@@ -39,16 +39,19 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public Task<List<OrganizationDto>> GetAllOrganizationsAsync()
+        public Task<List<OrganizationResponseDto>> GetAllOrganizationsAsync()
         {
             return _context.Organizations
-                .Select(o => _mapper.Map<OrganizationDto>(o))
+            .Include(o => o.Departments)
+                .Select(o => _mapper.Map<OrganizationResponseDto>(o))
                 .ToListAsync();
         }
 
         public async Task<Organization?> GetOrganizationInfoAsync(int organizationId)
         {
-            return await _context.Organizations.FindAsync(organizationId);
+            return await _context.Organizations
+                .Include(o => o.Departments)
+                .FirstOrDefaultAsync(o => o.OrganizationId == organizationId);
         }
 
         public Task<bool> HasDepartmentsAsync(int organizationId)

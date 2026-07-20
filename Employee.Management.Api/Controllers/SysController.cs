@@ -56,14 +56,14 @@ namespace Employee.Management.Api.Controllers
         public async Task<IActionResult> GetAllOrganizations()
         {
             var organizations = await _companyService.GetAllOrganizations();
-            return Ok(organizations);
+            return Ok(new GetAllOrganizationResponseDto { Organizations = organizations });
         }
 
         [HttpGet("get-organization-info/{id}")]
         public async Task<IActionResult> GetOrganizationInfo(int id)
         {
             var organization = await _companyService.GetOrganizationInfo(id);
-            return Ok(organization);
+            return Ok(new GetOrganizationResponseDto { Organization = organization });
         }
 
         [HttpPost("create-organization")]
