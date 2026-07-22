@@ -41,14 +41,20 @@ namespace Employee.Management.Infrastructure.Repositories
 
         public Task<List<DepartmentDto>> GetAllDepartmentsAsync()
         {
-            return _context.Departments
+            return _context.Departments.AsNoTracking()
+                .Include(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
                 .Select(d => _mapper.Map<DepartmentDto>(d))
                 .ToListAsync();
         }
 
         public async Task<Department?> GetDepartmentInfoAsync(Guid departmentId)
         {
-            return await _context.Departments.FindAsync(departmentId);
+            return await _context.Departments.AsNoTracking()
+
+                .Include(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
         }
 
         // Any employees or managers still attached to the department.

@@ -1,3 +1,5 @@
+using System;
+
 namespace Employee.Management.Models.Dtos.RequestDtos
 {
     public class SaveManagerDto

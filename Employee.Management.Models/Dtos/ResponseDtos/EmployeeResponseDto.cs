@@ -22,9 +22,8 @@ namespace Employee.Management.Models.Dtos.ResponseDtos
 
         public DateTime UpdatedAt { get; set; }
 
-        public virtual DepartmentResponseDto Department { get; set; } = null!;
+        public virtual string Department { get; set; } = null!;
 
-        public virtual DomainUserDto DomainUser { get; set; } = null!;
     }
 
 

@@ -208,6 +208,30 @@ namespace Employee.Management.Core.BusinessContext
             return _mapper.Map<ManagerDto>(manager);
         }
 
+        public async Task<bool> AddReportToManager(Guid managerId, AddReportToManagerDto request)
+        {
+            var existingManager = await _managerRepository.GetManagerInfoAsync(managerId);
+            if (existingManager == null)
+                throw new NotFoundException("Manager not found.");
+
+            // request.ReportIds are Employee.EmployeeId values. ReportingLine.ReportId is an
+            // FK to DomainUser.DomainUserId, so each employee must be resolved to its
+            // DomainUserId before being written — the two GUIDs are not interchangeable.
+            var domainUserIds = new List<Guid>();
+            foreach (var reportId in request.ReportIds)
+            {
+                var reportEmployee = await _employeeRepository.GetEmployeeInfoAsync(reportId);
+                if (reportEmployee == null)
+                    throw new NotFoundException($"Report employee with ID {reportId} not found.");
+
+                domainUserIds.Add(reportEmployee.DomainUserId);
+            }
+
+            var added = await _managerRepository.AddReports(managerId, domainUserIds);
+            _logger.LogInformation("Added reports to manager {ManagerId} (success: {Added})", managerId, added);
+            return added;
+        }
+
         #endregion
     }
 }

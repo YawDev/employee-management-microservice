@@ -12,4 +12,6 @@ public interface IManagerRepository
     Task<int> EditManagerAsync(Manager manager);
     Task<int> DeleteManagerAsync(Guid managerId);
     Task<bool> HasReportsAsync(Guid managerId);
+    Task<bool> AddReports(Guid managerId, List<Guid> reportIds);
+    Task<bool> RemoveReports(Guid managerId, List<Guid> reportIds);
 }

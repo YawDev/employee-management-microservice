@@ -6,6 +6,8 @@ namespace Employee.Management.Models.Dtos.ResponseDtos
 
         public int TenantId { get; set; }
 
+        public string TenantName { get; set; } = null!;
+
         public Guid IdentityUserId { get; set; }
 
         public string FirstName { get; set; } = null!;
@@ -16,9 +18,6 @@ namespace Employee.Management.Models.Dtos.ResponseDtos
 
         public string? PhoneNumber { get; set; }
 
-        public DateTime CreatedAt { get; set; }
-
-        public DateTime UpdatedAt { get; set; }
     }
 
 }
