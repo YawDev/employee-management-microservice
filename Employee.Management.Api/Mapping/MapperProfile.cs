@@ -64,11 +64,30 @@ namespace Employee.Management.Api.Mapping
             // Employees/Managers later (e.g. .ThenInclude(d => d.Employees)) can't
             // reopen the same cycle through Employee.Department / Manager.Department.
             CreateMap<EmployeeEntity, EmployeeResponseDto>()
-                .ForMember(dest => dest.Department, opt => opt.Ignore());
-            CreateMap<Manager, ManagerResponseDto>()
-                .ForMember(dest => dest.Department, opt => opt.Ignore());
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
+            CreateMap<Manager, ManagerInfoResponseDto>()
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
             CreateMap<DomainUser, DomainUserResponseDto>();
+            CreateMap<ReportingLine, ReportLineResponseDto>()
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Report.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Report.LastName));
             #endregion
+
+            #region EntityDtos -> ResponseDtos
+            CreateMap<OrganizationDto, OrganizationResponseDto>();
+            CreateMap<DepartmentDto, DepartmentResponseDto>();
+            CreateMap<EmployeeDto, EmployeeResponseDto>();
+            CreateMap<DomainUserDto, DomainUserResponseDto>()
+                .ForMember(dest => dest.DomainUserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant.TenantId))
+                .ForMember(dest => dest.TenantName, opt => opt.MapFrom(src => src.Tenant.Name));
+            CreateMap<ManagerDto, ManagerInfoResponseDto>()
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
+            CreateMap<ReportingLineDto, ReportLineResponseDto>()
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Report.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Report.LastName));
+            #endregion
+
         }
     }
 }

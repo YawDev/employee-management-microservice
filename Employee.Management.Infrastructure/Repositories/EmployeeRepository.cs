@@ -37,13 +37,18 @@ namespace Employee.Management.Infrastructure.Repositories
         public Task<List<EmployeeDto>> GetAllEmployeesAsync()
         {
             return _context.Employees
+                .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(e => e.Department)
                 .Select(e => _mapper.Map<EmployeeDto>(e))
                 .ToListAsync();
         }
 
         public async Task<EmployeeEntity?> GetEmployeeInfoAsync(Guid employeeId)
         {
-            return await _context.Employees.FindAsync(employeeId);
+            return await _context.Employees.AsNoTracking()
+                .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(e => e.Department)
+                .FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
         }
     }
 }

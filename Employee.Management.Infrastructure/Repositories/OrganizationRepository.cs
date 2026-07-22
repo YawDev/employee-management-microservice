@@ -43,14 +43,22 @@ namespace Employee.Management.Infrastructure.Repositories
         {
             return _context.Organizations
             .Include(o => o.Departments)
+            .ThenInclude(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+            .Include(o => o.Departments)
+            .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(r => r.DomainUser).ThenInclude(d => d.Tenant)
+            .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(r => r.ReportingLines)
                 .Select(o => _mapper.Map<OrganizationResponseDto>(o))
                 .ToListAsync();
         }
 
         public async Task<Organization?> GetOrganizationInfoAsync(int organizationId)
         {
-            return await _context.Organizations
-                .Include(o => o.Departments)
+            return await _context.Organizations.AsNoTracking()
+                .Include(o => o.Departments).ThenInclude(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers)
+                .ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers)
+                .ThenInclude(m => m.ReportingLines).ThenInclude(r => r.Report)
                 .FirstOrDefaultAsync(o => o.OrganizationId == organizationId);
         }
 
