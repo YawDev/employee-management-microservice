@@ -1,6 +1,4 @@
-using AutoMapper;
 using Employee.Management.Core.Interfaces.Repositories;
-using Employee.Management.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 // 'Employee' is both a namespace root and an entity type — alias the entity to disambiguate.
@@ -8,10 +6,9 @@ using EmployeeEntity = Employee.Management.Models.DatabaseModels.Employee;
 
 namespace Employee.Management.Infrastructure.Repositories
 {
-    public class EmployeeRepository(EmployeeManagementDbContext context, IMapper mapper) : IEmployeeRepository
+    public class EmployeeRepository(EmployeeManagementDbContext context) : IEmployeeRepository
     {
         private readonly EmployeeManagementDbContext _context = context;
-        private readonly IMapper _mapper = mapper;
 
         public Task<bool> CheckForExistingDomainUser(Guid domainUserId, Guid? employeeId = null)
         {
@@ -34,12 +31,32 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public Task<List<EmployeeDto>> GetAllEmployeesAsync()
+        // Scoped write: only persists when the employee still belongs to the organization,
+        // so a Company Admin can't edit an employee outside their org.
+        public async Task<int> EditEmployeeForOrganizationAsync(int organizationId, EmployeeEntity employee)
         {
-            return _context.Employees
+            var belongsToOrg = await _context.Employees.AnyAsync(e =>
+                e.EmployeeId == employee.EmployeeId && e.Department.OrganizationId == organizationId);
+            if (!belongsToOrg) return 0;
+
+            _context.Employees.Update(employee);
+            return await _context.SaveChangesAsync();
+        }
+
+        public Task<List<EmployeeEntity>> GetAllEmployeesAsync()
+        {
+            return _context.Employees.AsNoTracking()
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
-                .Select(e => _mapper.Map<EmployeeDto>(e))
+                .ToListAsync();
+        }
+
+        public Task<List<EmployeeEntity>> GetAllEmployeesForOrganizationAsync(int organizationId)
+        {
+            return _context.Employees.AsNoTracking()
+                .Where(e => e.Department.OrganizationId == organizationId)
+                .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(e => e.Department)
                 .ToListAsync();
         }
 
@@ -49,6 +66,14 @@ namespace Employee.Management.Infrastructure.Repositories
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
                 .FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
+        }
+
+        public async Task<EmployeeEntity?> GetEmployeeInfoForOrganizationAsync(int organizationId, Guid employeeId)
+        {
+            return await _context.Employees.AsNoTracking()
+                .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(e => e.Department)
+                .FirstOrDefaultAsync(e => e.EmployeeId == employeeId && e.Department.OrganizationId == organizationId);
         }
     }
 }

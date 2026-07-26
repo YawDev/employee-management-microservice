@@ -1,15 +1,12 @@
-using AutoMapper;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Management.Infrastructure.Repositories
 {
-    public class DepartmentRepository(EmployeeManagementDbContext context, IMapper mapper) : IDepartmentRepository
+    public class DepartmentRepository(EmployeeManagementDbContext context) : IDepartmentRepository
     {
         private readonly EmployeeManagementDbContext _context = context;
-        private readonly IMapper _mapper = mapper;
 
         public Task<bool> CheckForExistingName(string name, int organizationId, Guid? departmentId = null)
         {
@@ -39,19 +36,29 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public Task<List<DepartmentDto>> GetAllDepartmentsAsync()
+        // Identity resolution so each Employee/Manager's back-reference to its parent
+        // Department resolves to the same instance — the flattened department name in the
+        // response DTOs reads from that nav and would NRE under plain AsNoTracking.
+        public Task<List<Department>> GetAllDepartmentsAsync()
         {
-            return _context.Departments.AsNoTracking()
+            return _context.Departments.AsNoTrackingWithIdentityResolution()
                 .Include(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
-                .Select(d => _mapper.Map<DepartmentDto>(d))
+                .ToListAsync();
+        }
+
+        public Task<List<Department>> GetAllDepartmentsForOrganizationAsync(int organizationId)
+        {
+            return _context.Departments.AsNoTrackingWithIdentityResolution()
+                .Where(d => d.OrganizationId == organizationId)
+                .Include(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
                 .ToListAsync();
         }
 
         public async Task<Department?> GetDepartmentInfoAsync(Guid departmentId)
         {
-            return await _context.Departments.AsNoTracking()
-
+            return await _context.Departments.AsNoTrackingWithIdentityResolution()
                 .Include(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
                 .FirstOrDefaultAsync(d => d.DepartmentId == departmentId);

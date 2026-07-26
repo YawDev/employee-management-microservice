@@ -1,15 +1,12 @@
-using AutoMapper;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Management.Infrastructure.Repositories
 {
-    public class ManagerRepository(EmployeeManagementDbContext context, IMapper mapper) : IManagerRepository
-    {  
+    public class ManagerRepository(EmployeeManagementDbContext context) : IManagerRepository
+    {
         private readonly EmployeeManagementDbContext _context = context;
-        private readonly IMapper _mapper = mapper;
 
         public Task<bool> CheckForExistingDomainUser(Guid domainUserId, Guid? managerId = null)
         {
@@ -40,30 +37,47 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public Task<List<ManagerDto>> GetAllManagersAsync()
+        public Task<List<Manager>> GetAllManagersAsync()
         {
-            return _context.Managers.AsTracking()
+            return _context.Managers.AsNoTracking()
                 .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(m => m.Department)
-                .Include(m => m.ReportingLines)
-                .ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
-                .Select(m => _mapper.Map<ManagerDto>(m))
+                .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
+                .ToListAsync();
+        }
+
+        public Task<List<Manager>> GetAllManagersForOrganizationAsync(int organizationId)
+        {
+            return _context.Managers.AsNoTracking()
+                .Where(m => m.Department.OrganizationId == organizationId)
+                .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(m => m.Department)
+                .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .ToListAsync();
         }
 
         public async Task<Manager?> GetManagerInfoAsync(Guid managerId)
         {
             return await _context.Managers.AsNoTracking()
-            .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
-            .Include(m => m.Department)
-            .Include(m => m.ReportingLines)
-            .ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
-            .FirstOrDefaultAsync(m => m.ManagerId == managerId);
+                .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(m => m.Department)
+                .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
+                .FirstOrDefaultAsync(m => m.ManagerId == managerId);
         }
 
         public Task<bool> HasReportsAsync(Guid managerId)
         {
             return _context.ReportingLines.AnyAsync(r => r.ManagerId == managerId);
+        }
+
+        // ReportingLine.ReportId is the PK (one manager per person), so a report can appear in
+        // at most one line. Returns the subset of reportIds already assigned to any manager.
+        public Task<List<Guid>> GetAssignedReportIds(List<Guid> reportIds)
+        {
+            return _context.ReportingLines
+                .Where(r => reportIds.Contains(r.ReportId))
+                .Select(r => r.ReportId)
+                .ToListAsync();
         }
 
         public Task<bool> AddReports(Guid managerId, List<Guid> reportIds)
@@ -86,6 +100,22 @@ namespace Employee.Management.Infrastructure.Repositories
 
             _context.ReportingLines.RemoveRange(reportingLines);
             return _context.SaveChangesAsync().ContinueWith(t => t.Result > 0);
+        }
+
+        public Task<List<ReportingLine>> GetAllReportsForManager(Guid managerId)
+        {
+            return _context.ReportingLines.AsNoTracking()
+                .Where(r => r.ManagerId == managerId)
+                .Include(r => r.Report)
+                .ToListAsync();
+        }
+
+        public Task<ReportingLine?> GetReportInfoForManager(Guid managerId, Guid reportId)
+        {
+            return _context.ReportingLines.AsNoTracking()
+                .Where(r => r.ManagerId == managerId && r.ReportId == reportId)
+                .Include(r => r.Report)
+                .FirstOrDefaultAsync();
         }
     }
 }

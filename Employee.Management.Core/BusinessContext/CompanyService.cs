@@ -3,7 +3,6 @@ using Employee.Management.Core.Exceptions;
 using Employee.Management.Core.Interfaces.Business;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos;
 using Employee.Management.Models.Dtos.RequestDtos;
 using Employee.Management.Models.Dtos.ResponseDtos;
 using Microsoft.Extensions.Logging;
@@ -89,7 +88,8 @@ namespace Employee.Management.Core.BusinessContext
 
         public async Task<List<OrganizationResponseDto>> GetAllOrganizations()
         {
-            return await _organizationRepository.GetAllOrganizationsAsync();
+            var organizations = await _organizationRepository.GetAllOrganizationsAsync();
+            return _mapper.Map<List<OrganizationResponseDto>>(organizations);
         }
 
         public async Task<OrganizationResponseDto> GetOrganizationInfo(int organizationId)
@@ -167,18 +167,55 @@ namespace Employee.Management.Core.BusinessContext
             return deleted;
         }
 
-        public async Task<List<DepartmentDto>> GetAllDepartments()
+        public async Task<List<DepartmentResponseDto>> GetAllDepartments()
         {
-            return await _departmentRepository.GetAllDepartmentsAsync();
+            var departments = await _departmentRepository.GetAllDepartmentsAsync();
+            return _mapper.Map<List<DepartmentResponseDto>>(departments);
         }
 
-        public async Task<DepartmentDto> GetDepartmentInfo(Guid departmentId)
+        public async Task<DepartmentResponseDto> GetDepartmentInfo(Guid departmentId)
         {
             var department = await _departmentRepository.GetDepartmentInfoAsync(departmentId);
             if (department == null)
                 throw new NotFoundException("Department not found.");
 
-            return _mapper.Map<DepartmentDto>(department);
+            return _mapper.Map<DepartmentResponseDto>(department);
+        }
+
+        public async Task<List<DepartmentResponseDto>> GetAllDepartmentsForOrganization(int organizationId)
+        {
+            if (await _organizationRepository.GetOrganizationInfoAsync(organizationId) == null)
+                throw new NotFoundException("Organization not found.");
+
+            var departments = await _departmentRepository.GetAllDepartmentsForOrganizationAsync(organizationId);
+            return _mapper.Map<List<DepartmentResponseDto>>(departments);
+        }
+
+        public async Task<DepartmentResponseDto> GetDepartmentInfoForOrganization(int organizationId, Guid departmentId)
+        {
+            var department = await _departmentRepository.GetDepartmentInfoAsync(departmentId);
+            if (department == null || department.OrganizationId != organizationId)
+                throw new NotFoundException("Department not found in this organization.");
+
+            return _mapper.Map<DepartmentResponseDto>(department);
+        }
+
+        // Company Admin creates within their own org — the org id comes from the route, not the body.
+        public Task<bool> CreateDepartmentForOrganization(int organizationId, SaveDepartmentDto department)
+        {
+            department.OrganizationId = organizationId;
+            return CreateDepartment(department);
+        }
+
+        public async Task<bool> EditDepartmentForOrganization(int organizationId, Guid departmentId, SaveDepartmentDto department)
+        {
+            var existingDepartment = await _departmentRepository.GetDepartmentInfoAsync(departmentId);
+            if (existingDepartment == null || existingDepartment.OrganizationId != organizationId)
+                throw new NotFoundException("Department not found in this organization.");
+
+            // A department can't be moved out of the admin's organization.
+            department.OrganizationId = organizationId;
+            return await EditDepartment(departmentId, department);
         }
 
         #endregion

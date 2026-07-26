@@ -38,6 +38,13 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.DomainUsers.AnyAsync(u => u.DomainUserId == domainUserId);
         }
 
+        // Get all domain users for a given set of IDs
+        public async Task<List<DomainUser>> AllDomainUsersExistAsync(List<Guid> domainUserIds)
+        {
+            return await _context.DomainUsers.Where(u => domainUserIds.Contains(u.DomainUserId)).ToListAsync();
+        }
+
+
         public async Task<bool> ExistsAsync(Guid userId)
         {
             var existingUser = await _context.ApplicationUsers.FindAsync(userId);
