@@ -1,15 +1,12 @@
-using AutoMapper;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos.ResponseDtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Management.Infrastructure.Repositories
 {
-    public class OrganizationRepository(EmployeeManagementDbContext context, IMapper mapper) : IOrganizationRepository
+    public class OrganizationRepository(EmployeeManagementDbContext context) : IOrganizationRepository
     {
         private readonly EmployeeManagementDbContext _context = context;
-        private readonly IMapper _mapper = mapper;
 
         public Task<bool> CheckForExistingName(string name, int tenantId, int? organizationId = null)
         {
@@ -39,26 +36,23 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public Task<List<OrganizationResponseDto>> GetAllOrganizationsAsync()
+        public Task<List<Organization>> GetAllOrganizationsAsync()
         {
-            return _context.Organizations
-            .Include(o => o.Departments)
-            .ThenInclude(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
-            .Include(o => o.Departments)
-            .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(r => r.DomainUser).ThenInclude(d => d.Tenant)
-            .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(r => r.ReportingLines)
-                .Select(o => _mapper.Map<OrganizationResponseDto>(o))
+            return _context.Organizations.AsNoTrackingWithIdentityResolution()
+                .Include(o => o.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .ToListAsync();
         }
 
         public async Task<Organization?> GetOrganizationInfoAsync(int organizationId)
         {
-            return await _context.Organizations.AsNoTracking()
+            return await _context.Organizations.AsNoTrackingWithIdentityResolution()
+                .Include(o => o.Tenant)
                 .Include(o => o.Departments).ThenInclude(d => d.Employees).ThenInclude(e => e.DomainUser).ThenInclude(d => d.Tenant)
-                .Include(o => o.Departments).ThenInclude(d => d.Managers)
-                .ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
-                .Include(o => o.Departments).ThenInclude(d => d.Managers)
-                .ThenInclude(m => m.ReportingLines).ThenInclude(r => r.Report)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(o => o.Departments).ThenInclude(d => d.Managers).ThenInclude(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .FirstOrDefaultAsync(o => o.OrganizationId == organizationId);
         }
 

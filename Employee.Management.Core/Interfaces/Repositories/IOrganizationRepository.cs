@@ -1,12 +1,11 @@
 using Employee.Management.Models.DatabaseModels;
-using Employee.Management.Models.Dtos.ResponseDtos;
 
 namespace Employee.Management.Core.Interfaces.Repositories;
 
 public interface IOrganizationRepository
 {
     Task<bool> CheckForExistingName(string name, int tenantId, int? organizationId = null);
-    Task<List<OrganizationResponseDto>> GetAllOrganizationsAsync();
+    Task<List<Organization>> GetAllOrganizationsAsync();
     Task<Organization?> GetOrganizationInfoAsync(int organizationId);
     Task<int> CreateOrganizationAsync(Organization organization);
     Task<int> EditOrganizationAsync(Organization organization);

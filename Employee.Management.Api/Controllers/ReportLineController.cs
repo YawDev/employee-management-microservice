@@ -3,18 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Employee.Management.Models.Dtos.RequestDtos;
-using Employee.Management.Models.Dtos.ResponseDtos;
-using AutoMapper;   
 
 namespace Employee.Management.Api.Controllers
 {
     [ApiController]
     [Route("report-line-api")]
-    public class ReportLineController(IEmployeeManagerService employeeManagerService, IMapper mapper) : ControllerBase
+    public class ReportLineController(IEmployeeManagerService employeeManagerService) : ControllerBase
     {
         private readonly IEmployeeManagerService _employeeManagerService = employeeManagerService;
-        private readonly IMapper _mapper = mapper;
 
         [Authorize(Policy = "EmployeePermission")]
         [HttpGet("get-employee-info/{employeeId}")]
@@ -29,8 +25,7 @@ namespace Employee.Management.Api.Controllers
         public async Task<IActionResult> GetManagerInfo(Guid managerId)
         {
             var managerInfo = await _employeeManagerService.GetManagerInfo(managerId);
-            var response = _mapper.Map<ManagerInfoResponseDto>(managerInfo);
-            return Ok(response);
+            return Ok(managerInfo);
         }
 
     }

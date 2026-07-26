@@ -50,6 +50,29 @@ namespace Employee.Management.Infrastructure.Repositories
             var tenant = await _context.Tenants.FindAsync(tenantId);
             return tenant;
         }
+
+        public async Task<Tenant> EditTenantForOrganization(int tenantId, Tenant tenant, int organizationId)
+        {
+            var existingTenant = await _context.Tenants.FindAsync(tenantId);
+            if (existingTenant == null)
+                throw new Exception("Tenant not found.");
+
+            // Check if the organization belongs to the tenant
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.OrganizationId == organizationId && o.TenantId == tenantId);
+
+            if (organization == null)
+                throw new Exception("Organization does not belong to the specified tenant.");
+
+            existingTenant.Name = tenant.Name;
+            existingTenant.Logo = tenant.Logo;
+
+            _context.Tenants.Update(existingTenant);
+            await _context.SaveChangesAsync();
+
+            return existingTenant;
+        }   
+    
     }
 
 }

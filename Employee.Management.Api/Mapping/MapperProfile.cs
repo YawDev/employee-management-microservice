@@ -67,7 +67,8 @@ namespace Employee.Management.Api.Mapping
                 .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
             CreateMap<Manager, ManagerInfoResponseDto>()
                 .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
-            CreateMap<DomainUser, DomainUserResponseDto>();
+            CreateMap<DomainUser, DomainUserResponseDto>()
+                .ForMember(dest => dest.TenantName, opt => opt.MapFrom(src => src.Tenant.Name));
             CreateMap<ReportingLine, ReportLineResponseDto>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Report.FirstName))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Report.LastName));
