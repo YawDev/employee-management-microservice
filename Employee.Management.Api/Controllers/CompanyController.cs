@@ -7,9 +7,9 @@ using Employee.Management.Models.Dtos.RequestDtos;
 
 namespace Employee.Management.Api.Controllers
 {
-    [Authorize(Policy = "CompanyPermission")] 
+    [Authorize(Policy = "CompanyPermission")]
     [ApiController]
-    [Route("company-admin-api")]
+    [Route("org")]
     public class CompanyController : ControllerBase
     {
         private readonly ICompanyService _companyService;
@@ -20,73 +20,73 @@ namespace Employee.Management.Api.Controllers
             _employeeManagerService = employeeManagerService;
         }
 
-        [HttpGet("get-all-departments-for-organization/{organizationId}")]
-        public async Task<IActionResult> GetAllDepartmentsForOrganization(int organizationId)
+        [HttpGet("get-all-departments/{companyId}")]
+        public async Task<IActionResult> GetAllDepartmentsForOrganization(int companyId)
         {
-            var departments = await _companyService.GetAllDepartmentsForOrganization(organizationId);
+            var departments = await _companyService.GetAllDepartmentsForOrganization(companyId);
             return Ok(departments);
         }
 
-        [HttpGet("get-department-info-for-organization/{organizationId}/{departmentId}")]
-        public async Task<IActionResult> GetDepartmentInfoForOrganization(int organizationId, Guid departmentId)
+        [HttpGet("get-department-info/{companyId}/{departmentId}")]
+        public async Task<IActionResult> GetDepartmentInfoForOrganization(int companyId, Guid departmentId)
         {
-            var department = await _companyService.GetDepartmentInfoForOrganization(organizationId, departmentId);
+            var department = await _companyService.GetDepartmentInfoForOrganization(companyId, departmentId);
             return Ok(department);
         }
 
-        [HttpPost("create-department-for-organization/{organizationId}")]
-        public async Task<IActionResult> CreateDepartmentForOrganization(int organizationId, [FromBody] SaveDepartmentDto department)
+        [HttpPost("create-department/{companyId}")]
+        public async Task<IActionResult> CreateDepartmentForOrganization(int companyId, [FromBody] SaveDepartmentDto department)
         {
-            var isSuccess = await _companyService.CreateDepartmentForOrganization(organizationId, department);
+            var isSuccess = await _companyService.CreateDepartmentForOrganization(companyId, department);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPut("edit-department-for-organization/{organizationId}/{departmentId}")]
-        public async Task<IActionResult> EditDepartmentForOrganization(int organizationId, Guid departmentId, [FromBody] SaveDepartmentDto department)
+        [HttpPut("edit-department/{companyId}/{departmentId}")]
+        public async Task<IActionResult> EditDepartmentForOrganization(int companyId, Guid departmentId, [FromBody] SaveDepartmentDto department)
         {
-            var isSuccess = await _companyService.EditDepartmentForOrganization(organizationId, departmentId, department);
+            var isSuccess = await _companyService.EditDepartmentForOrganization(companyId, departmentId, department);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPost("create-manager-for-organization/{organizationId}")]
-        public async Task<IActionResult> CreateManagerForOrganization(int organizationId, [FromBody] SaveManagerDto manager)
+        [HttpPost("create-manager/{companyId}")]
+        public async Task<IActionResult> CreateManagerForOrganization(int companyId, [FromBody] SaveManagerDto manager)
         {
-            var isSuccess = await _employeeManagerService.CreateManagerForOrganization(manager, organizationId);
+            var isSuccess = await _employeeManagerService.CreateManagerForOrganization(manager, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPut("edit-manager-for-organization/{organizationId}/{managerId}")]
-        public async Task<IActionResult> EditManagerForOrganization(int organizationId, Guid managerId, [FromBody] SaveManagerDto manager)
+        [HttpPut("edit-manager/{companyId}/{managerId}")]
+        public async Task<IActionResult> EditManagerForOrganization(int companyId, Guid managerId, [FromBody] SaveManagerDto manager)
         {
-            var isSuccess = await _employeeManagerService.EditManagerForOrganization(managerId, manager, organizationId);
+            var isSuccess = await _employeeManagerService.EditManagerForOrganization(managerId, manager, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPost("create-employee-for-organization/{organizationId}")]
-        public async Task<IActionResult> CreateEmployeeForOrganization(int organizationId, [FromBody] SaveEmployeeDto employeeDto)
+        [HttpPost("create-employee/{companyId}")]
+        public async Task<IActionResult> CreateEmployeeForOrganization(int companyId, [FromBody] SaveEmployeeDto employeeDto)
         {
-            var isSuccess = await _employeeManagerService.CreateEmployeeForOrganization(employeeDto, organizationId);
+            var isSuccess = await _employeeManagerService.CreateEmployeeForOrganization(employeeDto, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPut("edit-employee-for-organization/{organizationId}/{employeeId}")]
-        public async Task<IActionResult> EditEmployeeForOrganization(int organizationId, Guid employeeId, [FromBody] SaveEmployeeDto employeeDto)
+        [HttpPut("edit-employee/{companyId}/{employeeId}")]
+        public async Task<IActionResult> EditEmployeeForOrganization(int companyId, Guid employeeId, [FromBody] SaveEmployeeDto employeeDto)
         {
-            var isSuccess = await _employeeManagerService.EditEmployeeForOrganization(employeeId, employeeDto, organizationId);
+            var isSuccess = await _employeeManagerService.EditEmployeeForOrganization(employeeId, employeeDto, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPost("add-report-for-manager/org/{organizationId}")]
-        public async Task<IActionResult> AddReportForManager(int organizationId, [FromBody] AddReportToManagerDto request)
+        [HttpPost("add-report-for-manager/{companyId}")]
+        public async Task<IActionResult> AddReportForManager(int companyId, [FromBody] AddReportToManagerDto request)
         {
-            var isSuccess = await _employeeManagerService.AddReportToManagerForOrganization(request.ManagerId, request.ReportIds, organizationId);
+            var isSuccess = await _employeeManagerService.AddReportToManagerForOrganization(request.ManagerId, request.ReportIds, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpDelete("remove-report-for-manager/org/{organizationId}")]
-        public async Task<IActionResult> RemoveReportForManager(int organizationId, [FromBody] AddReportToManagerDto request)
+        [HttpDelete("remove-report-for-manager/{companyId}")]
+        public async Task<IActionResult> RemoveReportForManager(int companyId, [FromBody] AddReportToManagerDto request)
         {
-            var isSuccess = await _employeeManagerService.RemoveReportFromManagerForOrganization(request.ManagerId, request.ReportIds, organizationId);
+            var isSuccess = await _employeeManagerService.RemoveReportFromManagerForOrganization(request.ManagerId, request.ReportIds, companyId);
             return Ok(new { IsSaved = isSuccess });
         }
 
