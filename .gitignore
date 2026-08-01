@@ -424,3 +424,6 @@ Employee.Management.Api/appsettings.Development.json
 .idea/.idea.Employee.Management/.idea/encodings.xml
 .idea/.idea.Employee.Management/.idea/indexLayout.xml
 .idea/.idea.Employee.Management/.idea/vcs.xml
+
+# Rider
+.idea/
