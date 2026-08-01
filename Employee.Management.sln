@@ -11,11 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Infrast
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Models", "Employee.Management.Models\Employee.Management.Models.csproj", "{8030B3F4-B2EF-4366-A7D7-CD8C901EF792}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Core.Tests", "tests\Employee.Management.Core.Tests\Employee.Management.Core.Tests.csproj", "{88F1744A-1C6B-47DE-94FC-FD26BF2E3087}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Core.Tests", "Tests\Employee.Management.Core.Tests\Employee.Management.Core.Tests.csproj", "{88F1744A-1C6B-47DE-94FC-FD26BF2E3087}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Infrastructure.Tests", "tests\Employee.Management.Infrastructure.Tests\Employee.Management.Infrastructure.Tests.csproj", "{C9427690-1D58-4571-ACB7-D946E1E6EDE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employee.Management.Infrastructure.Tests", "Tests\Employee.Management.Infrastructure.Tests\Employee.Management.Infrastructure.Tests.csproj", "{C9427690-1D58-4571-ACB7-D946E1E6EDE2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
