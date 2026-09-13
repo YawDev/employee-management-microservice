@@ -8,6 +8,7 @@ using Employee.Management.Infrastructure;
 using Employee.Management.Infrastructure.Repositories;
 using Employee.Management.Models.DatabaseModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Console;
@@ -103,6 +104,23 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddEntityFrameworkStores<EmployeeManagementDbContext>()
 .AddDefaultTokenProviders();
 
+// Liveness/readiness probe for the deployment pipeline and uptime monitoring. The DbContext check
+// opens a real connection, so a deploy fails fast if the app can't reach the database.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<EmployeeManagementDbContext>("database");
+
+// Validate the signing key at startup rather than on the first request. The null case is caught
+// below, but an empty or too-short key slips through and throws "key length is zero" per-request —
+// turning every call, including /health, into a 500. HMAC-SHA256 needs at least 256 bits.
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || System.Text.Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Key is missing or shorter than 32 bytes. Set the Jwt__Key environment variable " +
+        "(generate one with: openssl rand -base64 64). It must match the identity service exactly, " +
+        "or every token this service receives will fail validation.");
+}
+
 // Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
     {
@@ -180,7 +198,19 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseMiddleware<CorrelationIdMiddleware>(); // Correlation id per request + a request-completion log line
 app.UseMiddleware<ExceptionHandlingMiddleware>(); // Centralized Exception handling
+
+// Caddy terminates TLS and forwards plain HTTP to the container. Without this the app only ever
+// sees http:// and UseHttpsRedirection below redirects forever. Caddy sets X-Forwarded-Proto:
+// https, which makes the redirect correctly no-op. KnownProxies defaults to loopback only — right,
+// since Caddy runs on the same host.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 app.UseHttpsRedirection(); // Redirects HTTP requests to HTTPS
+
+app.MapHealthChecks("/health").AllowAnonymous(); // Before auth — the probe carries no token
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers(); // Maps controller routes for controller-based APIs

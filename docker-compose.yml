@@ -1,0 +1,14 @@
+# Runs the exact image that gets deployed, against the real Neon database.
+# Secrets come from a local .env file (gitignored) — see .env.example.
+services:
+  api:
+    build: .
+    ports: ["8081:8080"]   # 8081 so it can run alongside the identity service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: ${EMT_DB_CONNECTION}
+      Jwt__Key: ${EMT_JWT_KEY}
+      Jwt__Issuer: ${EMT_JWT_ISSUER}
+      Jwt__Audience: ${EMT_JWT_AUDIENCE}
+      CorsOriginSettings__DomainList__0: ${EMT_CORS_ORIGIN_APP}
+      CorsOriginSettings__DomainList__1: ${EMT_CORS_ORIGIN_SYS}

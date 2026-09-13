@@ -1,0 +1,24 @@
+# Caddy fronts both EMT backends on the droplet. It is the only container bound
+# to host ports; the APIs publish nothing and are reachable exclusively over the
+# shared `emt` Docker network, by container name.
+#
+# Certificates are issued and renewed automatically via Let's Encrypt. That
+# requires each hostname below to already resolve to this droplet — Caddy asks
+# for a cert the moment it starts, and failed validations count against Let's
+# Encrypt's rate limit (5 per hostname per hour).
+
+{
+	email jason.ampah.dev@gmail.com
+}
+
+# Identity service — auth, tokens, account management.
+auth.employee-management-tool.com {
+	reverse_proxy emt-identity:8080
+	encode zstd gzip
+}
+
+# Org-domain microservice.
+api.employee-management-tool.com {
+	reverse_proxy emt-api:8080
+	encode zstd gzip
+}
