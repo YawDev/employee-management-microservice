@@ -2,6 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
+# global.json pins the SDK feature band, so restore here resolves the same
+# toolchain CI uses rather than whatever the base image happens to ship.
+COPY global.json .
+
 # Copy only csproj files first so the restore layer caches across source-only changes
 COPY Employee.Management.Api/Employee.Management.Api.csproj                       Employee.Management.Api/
 COPY Employee.Management.Core/Employee.Management.Core.csproj                     Employee.Management.Core/
