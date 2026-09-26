@@ -1,0 +1,65 @@
+# Caddy in k3s: TLS termination and hostname routing for both EMT APIs.
+#
+# The Caddyfile lives next to this file and is loaded as a ConfigMap:
+#   kubectl -n emt create configmap caddyfile --from-file=Caddyfile \
+#     --dry-run=client -o yaml | kubectl apply -f -
+#   kubectl apply -f caddy.yaml
+# After changing the Caddyfile, re-run the first command, then:
+#   kubectl -n emt rollout restart deployment/caddy
+#
+# Applied by hand, not by the pipeline: it changes rarely, and a bad Caddy change
+# takes both services offline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+  namespace: emt
+  labels:
+    app: caddy
+spec:
+  replicas: 1
+  # Only one pod can hold host ports 80/443, so a rolling update would deadlock.
+  # Recreate = a few seconds offline whenever Caddy restarts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: caddy
+  template:
+    metadata:
+      labels:
+        app: caddy
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: caddy
+          image: caddy:2-alpine
+          ports:
+            - name: http
+              containerPort: 80
+              hostPort: 80
+            - name: https
+              containerPort: 443
+              hostPort: 443
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: caddyfile
+        # TLS certificates. A host directory, not a volume claim: there is one
+        # node, and it was seeded with the certificates Docker's Caddy held.
+        # Losing it means re-issuing every cert, which burns Let's Encrypt limits.
+        - name: data
+          hostPath:
+            path: /var/lib/emt/caddy/data
+            type: DirectoryOrCreate
