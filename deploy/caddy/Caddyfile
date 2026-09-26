@@ -1,6 +1,6 @@
-# Caddy fronts both EMT backends on the droplet. It is the only container bound
-# to host ports; the APIs publish nothing and are reachable exclusively over the
-# shared `emt` Docker network, by container name.
+# Caddy fronts both EMT backends on the droplet. It runs as a pod in the k3s
+# cluster (namespace emt) and is the only thing bound to host ports; the APIs are
+# reachable only through their k3s Services, by name (emt-identity, emt-api).
 #
 # Certificates are issued and renewed automatically via Let's Encrypt. That
 # requires each hostname below to already resolve to this droplet — Caddy asks
