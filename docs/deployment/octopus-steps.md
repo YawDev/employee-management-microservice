@@ -39,7 +39,7 @@ login succeeds and every call here returns 401 with nothing in the logs saying w
 defaults to PowerShell), Execution Location *Run on each deployment target*,
 Target Tags `emt-microservice`.
 
-### Step 1 — Deploy microservice container
+### Step 1 — Deploy microservice with Helm
 
 Timeout 10 minutes. One package reference:
 
@@ -51,43 +51,52 @@ Timeout 10 minutes. One package reference:
 | Package Acquisition | **The package won't be downloaded** |
 
 > `Octopus.Action.Package[...]` keys on the reference **Name**, not the Package
-> ID. A mismatch resolves empty and docker fails with `invalid reference format`
-> — right after a successful login, so it reads like a credentials problem.
+> ID. A mismatch resolves empty, and the script stops with "Package version is empty".
+
+Same script as the identity project apart from `REPO` and the package reference
+name. The reasoning behind each part is in the identity repo's `octopus-steps.md`.
+Releases before 1.0.6 have no `helm/` folder at their tag and can't be redeployed.
 
 ```bash
 set -euo pipefail
+# kubectl/helm need this: without it they read the root-only k3s config and fail.
+export KUBECONFIG=$HOME/.kube/config
 
+RELEASE="$(get_octopusvariable 'EMT.Container.Name')"
+REPO=YawDev/employee-management-microservice
 VERSION="$(get_octopusvariable 'Octopus.Action.Package[emt-microservice-api].PackageVersion')"
-NAME="$(get_octopusvariable 'EMT.Container.Name')"
+[ -n "$VERSION" ] || { echo "Package version is empty — check the package reference Name"; exit 1; }
 
-if [ -z "$VERSION" ]; then
-  echo "Package version is empty — check the package reference Name matches"
-  exit 1
-fi
+umask 077; WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
-IMAGE="ghcr.io/yawdev/emt-microservice-api:$VERSION"
+# Chart at the release's git tag, so the chart that ships matches the code it was
+# built with — and redeploying an old release redeploys its chart too.
+curl -fsSL "https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz" \
+  | tar -xz -C "$WORK" --strip-components=1 --wildcards '*/helm/*'
+CHART="$WORK/helm"
 
-# ghcr packages are private by default, so the droplet needs credentials to pull.
-echo "$(get_octopusvariable 'EMT.Ghcr.Token')" \
-  | docker login ghcr.io -u "$(get_octopusvariable 'EMT.Ghcr.User')" --password-stdin
+# Fill each "#{Variable}" in values.prod.yaml from Octopus. Octopus's own file
+# substitution is documented for package steps only, so the script does it. Values
+# are JSON-quoted, so any character stays valid YAML. A missing variable fails here.
+for ph in $(grep -o '"#{[^}]*}"' "$CHART/values.prod.yaml" | sort -u); do
+  name="${ph#\"\#\{}"; name="${name%\}\"}"
+  value="$(get_octopusvariable "$name")"
+  [ -n "$value" ] || { echo "Octopus variable '$name' is empty"; exit 1; }
+  PH="$ph" VAL="$value" python3 -c 'import json,os,sys; p=sys.argv[1]; s=open(p).read(); open(p,"w").write(s.replace(os.environ["PH"], json.dumps(os.environ["VAL"])))' "$CHART/values.prod.yaml"
+done
 
-docker pull "$IMAGE"
-docker rm -f "$NAME" 2>/dev/null || true
+# ghcr packages are private; refresh the cluster's pull credentials every deploy so
+# a rotated PAT takes effect. Built in a file, so the token never appears in `ps`.
+AUTH="$(printf '%s:%s' "$(get_octopusvariable 'EMT.Ghcr.User')" "$(get_octopusvariable 'EMT.Ghcr.Token')" | base64 -w0)"
+printf '{"auths":{"ghcr.io":{"auth":"%s"}}}' "$AUTH" > "$WORK/docker.json"
+kubectl -n emt create secret generic ghcr-pull --type=kubernetes.io/dockerconfigjson \
+  --from-file=.dockerconfigjson="$WORK/docker.json" --dry-run=client -o yaml | kubectl apply -f -
 
-# No published ports: Caddy reaches this container by name over the `emt`
-# network. Publishing to the host would expose the API over plain HTTP.
-docker run -d --name "$NAME" --restart unless-stopped \
-  --network emt \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ConnectionStrings__DefaultConnection="$(get_octopusvariable 'EMT.Db.ConnectionString')" \
-  -e Jwt__Key="$(get_octopusvariable 'EMT.Jwt.Key')" \
-  -e Jwt__Issuer="$(get_octopusvariable 'EMT.Jwt.Issuer')" \
-  -e Jwt__Audience="$(get_octopusvariable 'EMT.Jwt.Audience')" \
-  -e CorsOriginSettings__DomainList__0="$(get_octopusvariable 'EMT.Cors.Origin.App')" \
-  -e CorsOriginSettings__DomainList__1="$(get_octopusvariable 'EMT.Cors.Origin.Sys')" \
-  "$IMAGE"
-
-docker image prune -af --filter "until=168h"
+# --wait: block until the new pod passes readiness. --rollback-on-failure (Helm 4's
+# name for --atomic): if it doesn't within 4 minutes, go back to the previous release.
+helm upgrade --install "$RELEASE" "$CHART" -n emt \
+  -f "$CHART/values.prod.yaml" --set image.tag="$VERSION" \
+  --wait --timeout 4m --rollback-on-failure
 ```
 
 ### Step 2 — Health check
@@ -95,6 +104,7 @@ docker image prune -af --filter "until=168h"
 Timeout 5 minutes, no package reference.
 
 ```bash
+export KUBECONFIG=$HOME/.kube/config
 URL="$(get_octopusvariable 'EMT.PublicUrl')/health"
 NAME="$(get_octopusvariable 'EMT.Container.Name')"
 
@@ -107,7 +117,7 @@ for i in $(seq 1 30); do
 done
 
 echo "Health check failed after 60s"
-docker logs --tail 50 "$NAME"
+kubectl -n emt logs "deployment/$NAME" --tail 50
 exit 1
 ```
 
