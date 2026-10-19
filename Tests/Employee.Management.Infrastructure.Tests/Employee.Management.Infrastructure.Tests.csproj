@@ -21,6 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- For MapperProfile: repositories that use ProjectTo need the real mapping config. -->
+    <ProjectReference Include="..\..\Employee.Management.Api\Employee.Management.Api.csproj" />
     <ProjectReference Include="..\..\Employee.Management.Infrastructure\Employee.Management.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Employee.Management.Core\Employee.Management.Core.csproj" />
     <ProjectReference Include="..\..\Employee.Management.Models\Employee.Management.Models.csproj" />
