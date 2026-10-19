@@ -14,8 +14,13 @@ namespace Employee.Management.Api.Mapping
         public MapperProfile()
         {
             #region DatabaseModels <-> DTOs
+
             // TenantDto is a read-facing subset of Tenant (no TimeZone / audit / nav collections).
-            CreateMap<Tenant, TenantDto>().ReverseMap();
+            CreateMap<Tenant, TenantDto>()
+            .ForMember(dest => dest.OrganizationCount,
+                            opt => opt.MapFrom(src => src.Organizations.Count()));
+                            
+            CreateMap<TenantDto, Tenant>().ForMember(dest => dest.Organizations, opt => opt.Ignore());
 
             CreateMap<Organization, OrganizationDto>().ReverseMap();
 

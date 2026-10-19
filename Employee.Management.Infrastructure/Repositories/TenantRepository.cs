@@ -1,4 +1,5 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.DatabaseModels;
 using Employee.Management.Models.Dtos;
@@ -41,8 +42,8 @@ namespace Employee.Management.Infrastructure.Repositories
         public Task<List<TenantDto>> GetAllTenantsAsync()
         {
             return _context.Tenants
-                .Select(t => _mapper.Map<TenantDto>(t))
-                .ToListAsync(); 
+                    .ProjectTo<TenantDto>(_mapper.ConfigurationProvider)
+                    .ToListAsync(); 
         }
 
         public async Task<Tenant> GetTenantInfoAsync(int tenantId)
