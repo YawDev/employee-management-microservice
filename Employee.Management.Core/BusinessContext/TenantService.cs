@@ -1,4 +1,5 @@
 using AutoMapper;
+using Employee.Management.Core.Exceptions;
 using Employee.Management.Core.Interfaces.Business;
 using Employee.Management.Core.Interfaces.Repositories;
 using Employee.Management.Models.Dtos;
@@ -20,7 +21,7 @@ namespace Employee.Management.Core.BusinessContext
             var existingName = await _tenantRepository.CheckForExistingName(tenant.Name);
             
             if(existingName)
-                throw new Exception("Tenant name already exists.");
+                throw new BadRequestException("Tenant name already exists.");
 
             var tenantEntity = new Tenant
             {
@@ -37,7 +38,7 @@ namespace Employee.Management.Core.BusinessContext
         {
             var existingTenant = await _tenantRepository.GetTenantInfoAsync(tenantId);
             if(existingTenant == null)
-                throw new Exception("Tenant not found.");
+                throw new NotFoundException("Tenant not found.");
 
             var deleted = await _tenantRepository.DeleteTenantAsync(tenantId) > 0;
             _logger.LogInformation("Deleted tenant {TenantId} (success: {Deleted})", tenantId, deleted);
@@ -48,10 +49,10 @@ namespace Employee.Management.Core.BusinessContext
         {
             var existingTenant = await _tenantRepository.GetTenantInfoAsync(tenantId);
             if (existingTenant == null)
-                throw new Exception("Tenant not found.");
+                throw new NotFoundException("Tenant not found.");
                 
             if (await _tenantRepository.CheckForExistingName(tenant.Name, tenantId))
-                throw new Exception("Tenant name already exists.");
+                throw new BadRequestException("Tenant name already exists.");
 
             existingTenant.Name = tenant.Name;
             existingTenant.Logo = tenant.Logo;
@@ -70,7 +71,7 @@ namespace Employee.Management.Core.BusinessContext
         {
             var tenant = await _tenantRepository.GetTenantInfoAsync(tenantId);
             if(tenant == null)
-                throw new Exception("Tenant not found.");
+                throw new NotFoundException("Tenant not found.");
 
             return _mapper.Map<TenantDto>(tenant);
         }
