@@ -17,7 +17,6 @@ namespace Employee.Management.Core.Interfaces.Business
         public Task<List<ManagerInfoResponseDto>> GetAllManagers();
         public Task<ManagerInfoResponseDto> GetManagerInfo(Guid managerId);
         public Task<bool> CreateManager(SaveManagerDto manager);
-        public Task<bool> EditManager(Guid managerId, SaveManagerDto manager);
         public Task<bool> DeleteManager(Guid managerId);
         #endregion
 
@@ -30,7 +29,6 @@ namespace Employee.Management.Core.Interfaces.Business
         public Task<List<ManagerInfoResponseDto>> GetAllManagersForOrganization(int OrganizationId);
         public Task<ManagerInfoResponseDto> GetManagerInfoForOrganization(Guid managerId, int OrganizationId);
         public Task<bool> CreateManagerForOrganization(SaveManagerDto manager, int OrganizationId);
-        public Task<bool> EditManagerForOrganization(Guid managerId, SaveManagerDto manager, int OrganizationId);
 
         public Task<List<EmployeeResponseDto>> GetAllEmployeesForOrganization(int OrganizationId);
         public Task<EmployeeResponseDto> GetEmployeeInfoForOrganization(Guid employeeId, int OrganizationId);

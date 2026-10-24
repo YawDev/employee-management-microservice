@@ -28,4 +28,7 @@ public partial class Employee
     public virtual Department Department { get; set; } = null!;
 
     public virtual DomainUser DomainUser { get; set; } = null!;
+
+    // Set when this employee is also a manager.
+    public virtual Manager? Manager { get; set; }
 }

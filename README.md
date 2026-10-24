@@ -16,9 +16,44 @@ identity service.
 | `Organization` | `OrganizationId` (PK), `TenantId` → `Tenant` | An org belongs to a tenant. |
 | `Department` | `DepartmentId` (PK, uuid), `OrganizationId` → `Organization` | Reaches its tenant via `Organization` — no redundant `TenantId`. |
 | `DomainUser` | `DomainUserId` (PK, uuid), `TenantId` → `Tenant`, `IdentityUserId` (unique) | The domain "person" — **distinct from the Identity `ApplicationUser`**. `IdentityUserId` links to Identity `AspNetUsers.Id`. `IsActive` = account/login state. |
-| `Employee` | `EmployeeId` (PK), `DomainUserId` → `DomainUser`, `DepartmentId` → `Department` | Individual contributors (ICs) **only**. `EmploymentStatus` ∈ {`Active`, `Inactive`}; `EndDate` null while employed. |
-| `Manager` | `ManagerId` (PK), `DomainUserId` → `DomainUser` (unique), `DepartmentId` → `Department` | A designated manager — a distinct entity, not a kind of `Employee`. |
+| `Employee` | `EmployeeId` (PK), `DomainUserId` → `DomainUser` (unique), `DepartmentId` → `Department` | The HR record for **everyone in a department, managers included**: job title, hire/end date, salary. One per person. `EmploymentStatus` ∈ {`Active`, `Inactive`}; `EndDate` null while employed. |
+| `Manager` | `ManagerId` (PK), `EmployeeId` → `Employee` (unique), `DomainUserId` (unique), `DepartmentId` | A **manager designation on an existing employee**. `DomainUserId`/`DepartmentId` are redundant copies of the employee's, kept for existing queries — see below. |
 | `ReportingLine` | `ReportId` (PK) → `DomainUser`, `ManagerId` → `Manager` | The org chart (see below). |
+
+### Managers are employees
+
+A manager is promoted from an existing `Employee`; there's no separate HR record for
+managers. `Manager` points at that employee with `EmployeeId`, and keeps
+`DomainUserId` and `DepartmentId` as redundant copies so `Department.Managers` and
+the existing manager queries still work.
+
+The database keeps the copies honest. `FK_Manager_Employee` is a **composite** foreign key:
+
+```sql
+FOREIGN KEY ("EmployeeId", "DomainUserId", "DepartmentId")
+  REFERENCES "Employee" ("EmployeeId", "DomainUserId", "DepartmentId")
+  ON UPDATE CASCADE
+```
+
+- A `Manager` row can only exist with the **same person and department** as its
+  `Employee` row (so a person can't be an employee in one department and a manager
+  in another).
+- Moving the employee to another department moves their `Manager` row with it.
+- `Employee` carries `UQ_Employee_DomainUserId` (one HR record per person) and
+  `UQ_Employee_Id_User_Dept` (the key the composite FK references).
+
+Rules enforced in code:
+
+- `add-manager` takes only `{ employeeId }`; the service copies the person and
+  department from that employee and rejects anyone who's already a manager.
+- There's no edit-manager endpoint: department changes go through `edit-employee`
+  and cascade.
+- `DomainUser.Role` follows the highest designation — `employee` when an employee is
+  created, `manager` when promoted, back to `employee` when the manager designation
+  is deleted. `sys-admin` and `company-admin` are never overwritten.
+- Responses list a person once: `get-department-info` leaves managers out of
+  `employees`, manager responses carry the HR fields from the linked `Employee`, and
+  employee responses carry `managerId` when the employee is also a manager.
 
 ### Reporting lines
 
@@ -63,7 +98,7 @@ level with `[Authorize(Policy = …)]`:
 | `SystemAdmin` | `sys-admin` | `SysController` (`sys-api`) — cross-tenant platform admin |
 | `CompanyPermission` | `sys-admin`, `company-admin` | `AdminController` (`company-admin-api`) |
 | `ManagerPermission` | `sys-admin`, `manager` | report tier (per endpoint) |
-| `EmployeePermission` | `sys-admin`, `employee` | report tier (per endpoint) |
+| `EmployeePermission` | `sys-admin`, `employee`, `manager` | report tier (per endpoint) — a manager is also an employee |
 
 `sys-admin` appears in **every** policy, so it is a superuser — system-only
 endpoints *plus* every lower tier (a role-hierarchy model). Still open: whether

@@ -166,7 +166,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("CompanyPermission", p => p.RequireRole("sys-admin", "company-admin"))
     // Configure Authorization policies to enforce role-based access control for different user roles in the application.
     .AddPolicy("ManagerPermission", p => p.RequireRole("sys-admin", "manager"))
-    .AddPolicy("EmployeePermission", p => p.RequireRole("sys-admin", "employee"));
+    // A manager is also an employee, so manager-role users get employee-level access too.
+    .AddPolicy("EmployeePermission", p => p.RequireRole("sys-admin", "employee", "manager"));
 
 // Register application services for dependency injection
 builder.Services.AddScoped<ITenantService, TenantService>();

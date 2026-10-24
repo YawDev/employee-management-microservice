@@ -130,6 +130,13 @@ namespace Employee.Management.Api.Controllers
             return Ok(managers);
         }
 
+        [HttpGet("get-manager-info/{id:guid}")]
+        public async Task<IActionResult> GetManagerInfo(Guid id)
+        {
+            var manager = await _employeeManagerService.GetManagerInfo(id);
+            return Ok(manager);
+        }
+
         [HttpPost("add-manager")]
         public async Task<IActionResult> AddManager([FromBody] SaveManagerDto request)
         {
@@ -142,13 +149,6 @@ namespace Employee.Management.Api.Controllers
         {
             var result = await _employeeManagerService.DeleteManager(id);
             return Ok(new DeleteResponseDto { IsDeleted = result });
-        }
-
-        [HttpPut("edit-manager/{id:guid}")]
-        public async Task<IActionResult> EditManager(Guid id, [FromBody] SaveManagerDto request)
-        {
-            var result = await _employeeManagerService.EditManager(id, request);
-            return Ok(new SaveResponseDto { IsSaved = result });
         }
 
         //TODO: Add implementation to for adding reports to a manager and removing reports from a manager.
@@ -166,10 +166,24 @@ namespace Employee.Management.Api.Controllers
             return Ok(employees);
         }
 
+        [HttpGet("get-employee-info/{id:guid}")]
+        public async Task<IActionResult> GetEmployeeInfo(Guid id)
+        {
+            var employee = await _employeeManagerService.GetEmployeeInfo(id);
+            return Ok(employee);
+        }
+
         [HttpPost("add-employee")]
         public async Task<IActionResult> AddEmployee([FromBody] SaveEmployeeDto request)
         {
             var result = await _employeeManagerService.CreateEmployee(request);
+            return Ok(new SaveResponseDto { IsSaved = result });
+        }
+
+        [HttpPut("edit-employee/{id:guid}")]
+        public async Task<IActionResult> EditEmployee(Guid id, [FromBody] SaveEmployeeDto request)
+        {
+            var result = await _employeeManagerService.EditEmployee(id, request);
             return Ok(new SaveResponseDto { IsSaved = result });
         }
     }
