@@ -31,7 +31,14 @@ into three components that share **one central PostgreSQL database**:
 
 ### Domain invariants worth knowing
 
-- **`Employee` = ICs only.** `Manager` is a distinct entity, *not* a kind of employee.
+- **A manager is an employee.** Every person in a department has one `Employee` row
+  (their HR record). `Manager` is a designation on top of it: `Manager.EmployeeId` →
+  `Employee`, with redundant `DomainUserId`/`DepartmentId` that a composite FK
+  (`ON UPDATE CASCADE`) keeps equal to the employee's. Create managers from an
+  `EmployeeId`; change their department via the employee.
+- **A person is listed once.** Department responses list managers only under
+  `managers`; `DomainUser.Role` is the highest designation (`manager` over
+  `employee`), never overwriting `sys-admin`/`company-admin`.
 - **The org chart lives in `ReportingLine`** (`ReportId → DomainUser`, `ManagerId → Manager`),
   unifying IC→manager and manager→supervisor. PK on `ReportId` = one manager per person.
 - **Soft-delete, never hard-delete people.** Off-boarding flips

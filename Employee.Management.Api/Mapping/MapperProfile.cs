@@ -69,26 +69,50 @@ namespace Employee.Management.Api.Mapping
             // Employees/Managers later (e.g. .ThenInclude(d => d.Employees)) can't
             // reopen the same cycle through Employee.Department / Manager.Department.
             CreateMap<EmployeeEntity, EmployeeResponseDto>()
-                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name))
+                .ForMember(dest => dest.OrganizationId, opt => opt.MapFrom(src => src.Department.OrganizationId))
+                .ForMember(dest => dest.ManagerId, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.ManagerId : (Guid?)null));
+            // HR fields come from the manager's own Employee row.
             CreateMap<Manager, ManagerInfoResponseDto>()
-                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name))
+                .ForMember(dest => dest.OrganizationId, opt => opt.MapFrom(src => src.Department.OrganizationId))
+                .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Employee.JobTitle))
+                .ForMember(dest => dest.HireDate, opt => opt.MapFrom(src => src.Employee.HireDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Employee.EndDate))
+                .ForMember(dest => dest.Salary, opt => opt.MapFrom(src => src.Employee.Salary))
+                .ForMember(dest => dest.EmploymentStatus, opt => opt.MapFrom(src => src.Employee.EmploymentStatus));
             CreateMap<DomainUser, DomainUserResponseDto>()
                 .ForMember(dest => dest.TenantName, opt => opt.MapFrom(src => src.Tenant.Name));
             CreateMap<ReportingLine, ReportLineResponseDto>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Report.FirstName))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Report.LastName));
+
+            // get-department-info: names come from the member's DomainUser (loaded by GetDepartmentInfoAsync).
+            // A manager is also an employee; list them once, under Managers.
+            CreateMap<Department, DepartmentDetailsResponseDto>()
+                .ForMember(dest => dest.Employees, opt => opt.MapFrom(src =>
+                    src.Employees.Where(e => !src.Managers.Any(m => m.DomainUserId == e.DomainUserId))));
+            // EmployeeId / ManagerId / JobTitle map by name.
+            CreateMap<EmployeeEntity, DepartmentEmployeeResponseDto>()
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.DomainUser.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.DomainUser.LastName));
+            CreateMap<Manager, DepartmentManagerResponseDto>()
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.DomainUser.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.DomainUser.LastName));
             #endregion
 
             #region EntityDtos -> ResponseDtos
             CreateMap<OrganizationDto, OrganizationResponseDto>();
             CreateMap<DepartmentDto, DepartmentResponseDto>();
-            CreateMap<EmployeeDto, EmployeeResponseDto>();
+            CreateMap<EmployeeDto, EmployeeResponseDto>()
+                .ForMember(dest => dest.OrganizationId, opt => opt.MapFrom(src => src.Department.OrganizationId));
             CreateMap<DomainUserDto, DomainUserResponseDto>()
                 .ForMember(dest => dest.DomainUserId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.Tenant.TenantId))
                 .ForMember(dest => dest.TenantName, opt => opt.MapFrom(src => src.Tenant.Name));
             CreateMap<ManagerDto, ManagerInfoResponseDto>()
-                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name));
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department.Name))
+                .ForMember(dest => dest.OrganizationId, opt => opt.MapFrom(src => src.Department.OrganizationId));
             CreateMap<ReportingLineDto, ReportLineResponseDto>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Report.FirstName))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Report.LastName));

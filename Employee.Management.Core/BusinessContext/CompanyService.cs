@@ -173,13 +173,13 @@ namespace Employee.Management.Core.BusinessContext
             return _mapper.Map<List<DepartmentResponseDto>>(departments);
         }
 
-        public async Task<DepartmentResponseDto> GetDepartmentInfo(Guid departmentId)
+        public async Task<DepartmentDetailsResponseDto> GetDepartmentInfo(Guid departmentId)
         {
             var department = await _departmentRepository.GetDepartmentInfoAsync(departmentId);
             if (department == null)
                 throw new NotFoundException("Department not found.");
 
-            return _mapper.Map<DepartmentResponseDto>(department);
+            return _mapper.Map<DepartmentDetailsResponseDto>(department);
         }
 
         public async Task<List<DepartmentResponseDto>> GetAllDepartmentsForOrganization(int organizationId)

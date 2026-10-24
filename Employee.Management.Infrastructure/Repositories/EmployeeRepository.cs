@@ -48,6 +48,7 @@ namespace Employee.Management.Infrastructure.Repositories
             return _context.Employees.AsNoTracking()
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
+                .Include(e => e.Manager)
                 .ToListAsync();
         }
 
@@ -57,6 +58,7 @@ namespace Employee.Management.Infrastructure.Repositories
                 .Where(e => e.Department.OrganizationId == organizationId)
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
+                .Include(e => e.Manager)
                 .ToListAsync();
         }
 
@@ -65,6 +67,7 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.Employees.AsNoTracking()
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
+                .Include(e => e.Manager)
                 .FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
         }
 
@@ -73,6 +76,7 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.Employees.AsNoTracking()
                 .Include(e => e.DomainUser).ThenInclude(d => d.Tenant)
                 .Include(e => e.Department)
+                .Include(e => e.Manager)
                 .FirstOrDefaultAsync(e => e.EmployeeId == employeeId && e.Department.OrganizationId == organizationId);
         }
     }

@@ -70,17 +70,36 @@ public class ManagerRepositoryTests
     public async Task GetAllManagersForOrganizationAsync_ReturnsOnlyManagersInThatOrg()
     {
         var repo = new ManagerRepository(_context);
-        // A manager eager-loads its DomainUser (+Tenant) and Department, so seed the whole
-        // person — otherwise EF's inner join for those required navs drops the row.
+        // A manager eager-loads its DomainUser (+Tenant), Employee and Department, so seed the
+        // whole graph — otherwise EF's inner join for those required navs drops the row.
         var engDept = new Department { DepartmentId = Guid.NewGuid(), OrganizationId = 1, Name = "Engineering" };
-        _context.Managers.Add(new Manager { ManagerId = Guid.NewGuid(), Department = engDept, DomainUser = Person() });
-        _context.Managers.Add(new Manager { ManagerId = Guid.NewGuid(), Department = new Department { DepartmentId = Guid.NewGuid(), OrganizationId = 2, Name = "Sales" }, DomainUser = Person() });
+        _context.Managers.Add(ManagerIn(engDept));
+        _context.Managers.Add(ManagerIn(new Department { DepartmentId = Guid.NewGuid(), OrganizationId = 2, Name = "Sales" }));
         await _context.SaveChangesAsync();
 
         var result = await repo.GetAllManagersForOrganizationAsync(organizationId: 1);
 
         Assert.Single(result);
         Assert.Equal(engDept.DepartmentId, result[0].DepartmentId);
+    }
+
+    // A manager is an employee: its Employee row shares the person and department.
+    private static Manager ManagerIn(Department department)
+    {
+        var person = Person();
+        return new Manager
+        {
+            ManagerId = Guid.NewGuid(),
+            Department = department,
+            DomainUser = person,
+            Employee = new Models.DatabaseModels.Employee
+            {
+                EmployeeId = Guid.NewGuid(),
+                DomainUser = person,
+                Department = department,
+                EmploymentStatus = "Active",
+            },
+        };
     }
 
     // A valid person: DomainUser + the Tenant it requires. Managers/employees eager-load

@@ -91,6 +91,20 @@ namespace Employee.Management.Infrastructure.Repositories
             return user;
         }
 
+        // Admin access comes from these roles, so employee/manager changes never overwrite them.
+        private static readonly string[] ProtectedRoles = ["sys-admin", "company-admin"];
+
+        // Role lives on the DomainUser; employee/manager changes keep it in step with the records.
+        public async Task<int> UpdateRoleAsync(Guid domainUserId, string role)
+        {
+            var user = await _context.DomainUsers.FirstOrDefaultAsync(u => u.DomainUserId == domainUserId);
+            if (user == null || ProtectedRoles.Contains(user.Role)) return 0;
+
+            user.Role = role;
+            user.UpdatedAt = DateTime.UtcNow;
+            return await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> ValidateCredentialsAsync(string userName, string passwordHash)
         {
             var existingUser = await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == userName && u.PasswordHash == passwordHash);

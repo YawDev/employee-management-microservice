@@ -31,16 +31,12 @@ namespace Employee.Management.Infrastructure.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<int> EditManagerAsync(Manager manager)
-        {
-            _context.Managers.Update(manager);
-            return await _context.SaveChangesAsync();
-        }
 
         public Task<List<Manager>> GetAllManagersAsync()
         {
             return _context.Managers.AsNoTracking()
                 .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(m => m.Employee)
                 .Include(m => m.Department)
                 .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .ToListAsync();
@@ -51,6 +47,7 @@ namespace Employee.Management.Infrastructure.Repositories
             return _context.Managers.AsNoTracking()
                 .Where(m => m.Department.OrganizationId == organizationId)
                 .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(m => m.Employee)
                 .Include(m => m.Department)
                 .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .ToListAsync();
@@ -60,6 +57,7 @@ namespace Employee.Management.Infrastructure.Repositories
         {
             return await _context.Managers.AsNoTracking()
                 .Include(m => m.DomainUser).ThenInclude(d => d.Tenant)
+                .Include(m => m.Employee)
                 .Include(m => m.Department)
                 .Include(m => m.ReportingLines).ThenInclude(r => r.Report).ThenInclude(d => d.Tenant)
                 .FirstOrDefaultAsync(m => m.ManagerId == managerId);

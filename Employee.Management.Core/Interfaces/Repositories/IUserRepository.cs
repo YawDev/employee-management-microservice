@@ -16,5 +16,6 @@ public interface IUserRepository
     Task<ApplicationUser?> GetByUserNameAsync(string userName);
     Task<IdentityUserDTO?> GetIdentityUserInfoAsync(Guid id);
     Task<ApplicationUser> UpdateAsync(ApplicationUser user);
+    Task<int> UpdateRoleAsync(Guid domainUserId, string role);
     Task<bool> ValidateCredentialsAsync(string userName, string passwordHash);
 }

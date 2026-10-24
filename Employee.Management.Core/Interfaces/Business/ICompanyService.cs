@@ -15,7 +15,7 @@ namespace Employee.Management.Core.Interfaces.Business
         public Task<bool> EditOrganization(int organizationId, SaveOrganizationDto organization);
         public Task<bool> DeleteOrganization(int organizationId);
         public Task<List<DepartmentResponseDto>> GetAllDepartments();
-        public Task<DepartmentResponseDto> GetDepartmentInfo(Guid departmentId);
+        public Task<DepartmentDetailsResponseDto> GetDepartmentInfo(Guid departmentId);
         public Task<bool> CreateDepartment(SaveDepartmentDto department);
         public Task<bool> EditDepartment(Guid departmentId, SaveDepartmentDto department);
         public Task<bool> DeleteDepartment(Guid departmentId);

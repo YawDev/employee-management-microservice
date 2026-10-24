@@ -22,6 +22,9 @@ namespace Employee.Management.Core.BusinessContext
         ILogger<EmployeeManagerService> logger) : IEmployeeManagerService
     {
         private const string EmploymentStatusActive = "Active";
+        // Match the API's EmployeePermission / ManagerPermission role names.
+        private const string EmployeeRole = "employee";
+        private const string ManagerRole = "manager";
         private const string EmploymentStatusInactive = "Inactive";
 
         private readonly IEmployeeRepository _employeeRepository = employeeRepository;
@@ -59,6 +62,8 @@ namespace Employee.Management.Core.BusinessContext
             };
 
             var created = await _employeeRepository.CreateEmployeeAsync(employeeEntity) > 0;
+            if (created)
+                await _userRepository.UpdateRoleAsync(employee.DomainUserId, EmployeeRole);
             _logger.LogInformation("Created employee for domain user {DomainUserId} in department {DepartmentId} (success: {Created})",
                 employee.DomainUserId, employee.DepartmentId, created);
             return created;
@@ -132,52 +137,30 @@ namespace Employee.Management.Core.BusinessContext
 
         public async Task<bool> CreateManager(SaveManagerDto manager)
         {
-            if (!await _userRepository.DomainUserExistsAsync(manager.DomainUserId))
-                throw new NotFoundException("Domain user not found.");
+            var employee = await _employeeRepository.GetEmployeeInfoAsync(manager.EmployeeId)
+                ?? throw new NotFoundException("Employee not found.");
 
-            if (await _departmentRepository.GetDepartmentInfoAsync(manager.DepartmentId) == null)
-                throw new NotFoundException("Department not found.");
+            // Manager.DomainUserId / EmployeeId are unique — one manager designation per person.
+            if (await _managerRepository.CheckForExistingDomainUser(employee.DomainUserId))
+                throw new BadRequestException("This employee is already a manager.");
 
-            // Manager.DomainUserId is unique — one manager designation per person.
-            if (await _managerRepository.CheckForExistingDomainUser(manager.DomainUserId))
-                throw new BadRequestException("This user is already a manager.");
-
+            // Person and department are copied from the employee; the DB's composite FK keeps them in step.
             var managerEntity = new Manager
             {
                 ManagerId = Guid.NewGuid(), // PK is app-generated (ValueGeneratedNever)
-                DomainUserId = manager.DomainUserId,
-                DepartmentId = manager.DepartmentId,
+                EmployeeId = employee.EmployeeId,
+                DomainUserId = employee.DomainUserId,
+                DepartmentId = employee.DepartmentId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
             var created = await _managerRepository.CreateManagerAsync(managerEntity) > 0;
-            _logger.LogInformation("Created manager for domain user {DomainUserId} in department {DepartmentId} (success: {Created})",
-                manager.DomainUserId, manager.DepartmentId, created);
+            if (created)
+                await _userRepository.UpdateRoleAsync(employee.DomainUserId, ManagerRole);
+            _logger.LogInformation("Created manager for employee {EmployeeId} in department {DepartmentId} (success: {Created})",
+                employee.EmployeeId, employee.DepartmentId, created);
             return created;
-        }
-
-        public async Task<bool> EditManager(Guid managerId, SaveManagerDto manager)
-        {
-            var existingManager = await _managerRepository.GetManagerInfoAsync(managerId);
-            if (existingManager == null)
-                throw new NotFoundException("Manager not found.");
-
-            // A manager designation stays bound to its person — changing who it is
-            // means deleting this designation and creating a new one.
-            if (manager.DomainUserId != existingManager.DomainUserId)
-                throw new BadRequestException("A manager record cannot be moved to a different user.");
-
-            if (manager.DepartmentId != existingManager.DepartmentId
-                && await _departmentRepository.GetDepartmentInfoAsync(manager.DepartmentId) == null)
-                throw new NotFoundException("Department not found.");
-
-            existingManager.DepartmentId = manager.DepartmentId;
-            existingManager.UpdatedAt = DateTime.UtcNow;
-
-            var updated = await _managerRepository.EditManagerAsync(existingManager) > 0;
-            _logger.LogInformation("Edited manager {ManagerId}", managerId);
-            return updated;
         }
 
         // Removes the manager *designation* row only — the person (DomainUser) is
@@ -193,6 +176,9 @@ namespace Employee.Management.Core.BusinessContext
                 throw new BadRequestException("Manager still has reports. Reassign them first.");
 
             var deleted = await _managerRepository.DeleteManagerAsync(managerId) > 0;
+            // They're still an employee, just no longer a manager.
+            if (deleted)
+                await _userRepository.UpdateRoleAsync(existingManager.DomainUserId, EmployeeRole);
             _logger.LogInformation("Deleted manager {ManagerId} (success: {Deleted})", managerId, deleted);
             return deleted;
         }
@@ -259,15 +245,10 @@ namespace Employee.Management.Core.BusinessContext
 
         public async Task<bool> CreateManagerForOrganization(SaveManagerDto manager, int OrganizationId)
         {
-            await EnsureDepartmentInOrganization(manager.DepartmentId, OrganizationId);
+            await EnsureOrganizationExists(OrganizationId);
+            if (await _employeeRepository.GetEmployeeInfoForOrganizationAsync(OrganizationId, manager.EmployeeId) == null)
+                throw new NotFoundException("Employee not found in this organization.");
             return await CreateManager(manager);
-        }
-
-        public async Task<bool> EditManagerForOrganization(Guid managerId, SaveManagerDto manager, int OrganizationId)
-        {
-            await GetManagerInOrganization(managerId, OrganizationId);
-            await EnsureDepartmentInOrganization(manager.DepartmentId, OrganizationId);
-            return await EditManager(managerId, manager);
         }
 
         public async Task<List<EmployeeResponseDto>> GetAllEmployeesForOrganization(int OrganizationId)

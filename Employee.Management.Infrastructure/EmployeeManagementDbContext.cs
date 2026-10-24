@@ -124,6 +124,7 @@ namespace Employee.Management.Infrastructure
                 entity.ToTable("Manager", t => t.ExcludeFromMigrations());
 
                 entity.HasIndex(e => e.DomainUserId, "Manager_DomainUserId_key").IsUnique();
+                entity.HasIndex(e => e.EmployeeId, "UQ_Manager_EmployeeId").IsUnique();
 
                 entity.Property(e => e.ManagerId).ValueGeneratedNever();
 
@@ -136,6 +137,13 @@ namespace Employee.Management.Infrastructure
                     .HasForeignKey<Manager>(d => d.DomainUserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Manager_DomainUser");
+
+                // In the DB this FK is composite (EmployeeId, DomainUserId, DepartmentId) with
+                // ON UPDATE CASCADE; EF only needs the EmployeeId part for the navigation.
+                entity.HasOne(d => d.Employee).WithOne(p => p.Manager)
+                    .HasForeignKey<Manager>(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Manager_Employee");
             });
 
             modelBuilder.Entity<Organization>(entity =>

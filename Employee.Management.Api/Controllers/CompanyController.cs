@@ -55,13 +55,6 @@ namespace Employee.Management.Api.Controllers
             return Ok(new { IsSaved = isSuccess });
         }
 
-        [HttpPut("edit-manager/{companyId}/{managerId}")]
-        public async Task<IActionResult> EditManagerForOrganization(int companyId, Guid managerId, [FromBody] SaveManagerDto manager)
-        {
-            var isSuccess = await _employeeManagerService.EditManagerForOrganization(managerId, manager, companyId);
-            return Ok(new { IsSaved = isSuccess });
-        }
-
         [HttpPost("create-employee/{companyId}")]
         public async Task<IActionResult> CreateEmployeeForOrganization(int companyId, [FromBody] SaveEmployeeDto employeeDto)
         {
